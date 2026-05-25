@@ -14,7 +14,7 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     outputs:
-      published: ${{ steps.changesets.outputs.published }}
+      released: ${{ steps.version.outputs.released }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
@@ -30,27 +30,40 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: bun run release
           commit: "chore(release): version packages"
           title: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get Published Version
+      - name: Detect Version Release
         id: version
-        if: steps.changesets.outputs.published == 'true'
         run: |
-          VERSION=$(echo '${{ steps.changesets.outputs.publishedPackages }}' | bun -e 'const packages = await Bun.stdin.json(); console.log(packages[0].version)')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          CURRENT_VERSION=$(bun -e 'console.log((await import("./package.json")).default.version)')
+          PREVIOUS_VERSION=$(git show HEAD^:package.json | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          gh release view "v$VERSION" >/dev/null 2>&1 || gh release create "v$VERSION" --title "v$VERSION" --notes "Release v$VERSION"
 
   build-assets:
     name: Build ${{ matrix.asset }}
     needs: release
-    if: needs.release.outputs.published == 'true'
+    if: needs.release.outputs.released == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
