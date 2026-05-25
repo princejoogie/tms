@@ -21,7 +21,7 @@ function runFilter(query: string) {
     "fzf",
     [
       "--reverse",
-      "--no-sort",
+      "--tiebreak=index",
       "--no-hscroll",
       "--delimiter",
       "\t",

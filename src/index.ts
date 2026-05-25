@@ -445,7 +445,7 @@ function pickTarget(rows: Row[]): Target | undefined {
     "fzf",
     [
       "--reverse",
-      "--no-sort",
+      "--tiebreak=index",
       "--no-hscroll",
       "--prompt",
       "tms> ",
