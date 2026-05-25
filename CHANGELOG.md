@@ -1,5 +1,11 @@
 # tms
 
+## 0.1.3
+
+### Patch Changes
+
+- [#6](https://github.com/princejoogie/tms/pull/6) [`0ba7a98`](https://github.com/princejoogie/tms/commit/0ba7a98acfc8bd4d78628178b96ae2fa2593a394) Thanks [@princejoogie](https://github.com/princejoogie)! - Test GitHub release asset builds for native runners.
+
 ## 0.1.2
 
 ### Patch Changes
