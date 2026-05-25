@@ -1,5 +1,11 @@
 # tms
 
+## 0.1.2
+
+### Patch Changes
+
+- [#4](https://github.com/princejoogie/tms/pull/4) [`dfd7049`](https://github.com/princejoogie/tms/commit/dfd70492dc73318b37104e727b49263b62937144) Thanks [@princejoogie](https://github.com/princejoogie)! - Test the native release asset workflow for patch releases.
+
 ## 0.1.1
 
 ### Patch Changes
