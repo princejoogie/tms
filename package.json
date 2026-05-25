@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --compile --outfile dist/tms",
-    "build:release": "bun build src/index.ts --compile --outfile dist/tms",
     "test": "bun test",
     "release": "changeset publish"
   },
