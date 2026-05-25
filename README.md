@@ -2,11 +2,11 @@
 
 [![Release](https://github.com/princejoogie/tms/actions/workflows/release.yml/badge.svg)](https://github.com/princejoogie/tms/actions/workflows/release.yml)
 
-A blazing fast, zero-dependency (other than `fzf` and `tmux`) sessionizer written in [Bun](https://bun.sh/) and TypeScript. `tms` smartly discovers your Git repositories and automatically groups Git Worktrees underneath their parent repository, keeping your session switcher clean and organized.
+A blazing fast sessionizer written in [Bun](https://bun.sh/) and TypeScript. `tms` smartly discovers your Git repositories and automatically groups Git Worktrees underneath their parent repository, keeping your session switcher clean and organized.
 
 ## Features
 
-- 🌳 **Worktree Aware:** Groups `git worktree` instances directly under their parent repository in the fuzzy finder.
+- 🌳 **Worktree Aware:** Groups `git worktree` instances directly under their parent repository in the TUI picker.
 - 🚀 **Blazing Fast:** Written in TypeScript and compiled to a single native binary using Bun.
 - 🔍 **Smart Discovery:** Respects `.gitignore` rules (skipping common noisy folders like `node_modules/`, `dist/`, `.next/`) to heavily optimize the repository walk.
 - 🛡️ **Tmux Integration:** Safely creates new detached sessions or attaches to existing ones, and intelligently uses `switch-client` if you are already inside tmux.
@@ -63,16 +63,10 @@ tms config --excluded vendor build .cache
 
 ## Usage
 
-Simply run `tms` in your terminal to open the fuzzy finder:
+Simply run `tms` in your terminal to open the TUI picker:
 
 ```sh
 tms
-```
-
-You can also print the discovered repository tree without opening `fzf` (useful for debugging):
-
-```sh
-tms list
 ```
 
 ## Contributing

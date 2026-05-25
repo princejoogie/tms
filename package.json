@@ -15,5 +15,8 @@
     "@changesets/cli": "^2.31.0",
     "@types/bun": "latest",
     "typescript": "latest"
+  },
+  "dependencies": {
+    "@opentui/core": "^0.2.15"
   }
 }
