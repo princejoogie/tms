@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "v*"
 
 permissions:
   contents: write
@@ -14,8 +12,10 @@ permissions:
 jobs:
   release:
     name: Release
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,9 +40,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get Published Version
+        id: version
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          VERSION=$(echo '${{ steps.changesets.outputs.publishedPackages }}' | bun -e 'const packages = await Bun.stdin.json(); console.log(packages[0].version)')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
   build-assets:
     name: Build ${{ matrix.asset }}
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: release
+    if: needs.release.outputs.published == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -74,4 +82,5 @@ jobs:
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ needs.release.outputs.version }}
           files: dist/${{ matrix.asset }}
