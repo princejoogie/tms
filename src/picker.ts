@@ -1,22 +1,43 @@
 import { filterRows } from "./filter";
 import { parseKeys } from "./picker-keys";
-import type { Row, Target } from "./types";
+import type { PickerTab, Row, Target } from "./types";
 import { createRenderer, restoreTerminal, setupTerminal } from "./ui/opentui";
-import { drawPicker, listHeight } from "./ui/picker-view";
+import { drawBootstrapPicker, drawPicker, listHeight } from "./ui/picker-view";
 
-export async function pickTarget(loadRows: () => Promise<Row[]>): Promise<Target | undefined> {
-  const renderer = await createRenderer();
+type TabState = {
+  loading: boolean;
+  loaded: boolean;
+  rows: Row[];
+  visibleRows: Row[];
+  query: string;
+  selectedIndex: number;
+  scrollOffset: number;
+};
+
+export async function pickTarget(
+  loadRepos: () => Promise<Row[]>,
+  loadSessions: () => Promise<Row[]>,
+  defaultTab: PickerTab = "repos",
+): Promise<Target | undefined> {
+  setupTerminal();
+  drawBootstrapPicker(defaultTab);
+
+  let renderer: Awaited<ReturnType<typeof createRenderer>>;
+  try {
+    renderer = await createRenderer();
+  } catch (error) {
+    restoreTerminal();
+    throw error;
+  }
+
   const stdin = process.stdin;
   const wasRaw = stdin.isRaw;
   let settled = false;
-  let loading = true;
-  let allRows: Row[] = [];
-  let query = "";
-  let visibleRows: Row[] = [];
-  let selectedIndex = 0;
-  let scrollOffset = 0;
-
-  setupTerminal();
+  let activeTab = defaultTab;
+  const tabs: Record<PickerTab, TabState> = {
+    repos: createTabState(defaultTab === "repos"),
+    sessions: createTabState(defaultTab === "sessions"),
+  };
 
   return new Promise((resolveTarget) => {
     const restoreForSignal = () => finish();
@@ -39,35 +60,61 @@ export async function pickTarget(loadRows: () => Promise<Row[]>): Promise<Target
 
     const draw = () => {
       syncScrollOffset();
-      drawPicker({ renderer, query, visibleRows, selectedIndex, scrollOffset, loading });
+      const tab = currentTab();
+      drawPicker({
+        renderer,
+        query: tab.query,
+        visibleRows: tab.visibleRows,
+        selectedIndex: tab.selectedIndex,
+        scrollOffset: tab.scrollOffset,
+        loading: tab.loading,
+        activeTab,
+      });
     };
 
     const updateList = () => {
-      visibleRows = filterRows(allRows, query);
-      selectedIndex = 0;
-      scrollOffset = 0;
+      const tab = currentTab();
+      tab.visibleRows = filterRows(tab.rows, tab.query);
+      tab.selectedIndex = 0;
+      tab.scrollOffset = 0;
       draw();
     };
 
     const moveSelection = (delta: number) => {
-      if (visibleRows.length === 0 || loading) return;
-      selectedIndex = Math.max(0, Math.min(selectedIndex + delta, visibleRows.length - 1));
+      const tab = currentTab();
+      if (tab.visibleRows.length === 0 || tab.loading) return;
+      tab.selectedIndex = Math.max(0, Math.min(tab.selectedIndex + delta, tab.visibleRows.length - 1));
       draw();
     };
 
     const selectCurrent = () => {
-      if (loading) return;
-      finish(visibleRows[selectedIndex]?.target);
+      const tab = currentTab();
+      if (tab.loading) return;
+      finish(tab.visibleRows[tab.selectedIndex]?.target);
     };
 
-    function syncScrollOffset() {
-      const visibleHeight = listHeight(renderer.height);
-      if (selectedIndex < scrollOffset) {
-        scrollOffset = selectedIndex;
-      } else if (selectedIndex >= scrollOffset + visibleHeight) {
-        scrollOffset = selectedIndex - visibleHeight + 1;
+    const switchTab = () => {
+      activeTab = activeTab === "repos" ? "sessions" : "repos";
+      const tab = currentTab();
+      if (!tab.loaded && !tab.loading) {
+        loadTab(activeTab, loaderForTab(activeTab));
       }
-      scrollOffset = Math.max(0, Math.min(scrollOffset, Math.max(0, visibleRows.length - visibleHeight)));
+      draw();
+    };
+
+    function currentTab() {
+      return tabs[activeTab];
+    }
+
+    function syncScrollOffset() {
+      const tab = currentTab();
+      const visibleHeight = listHeight(renderer.height);
+      if (tab.selectedIndex < tab.scrollOffset) {
+        tab.scrollOffset = tab.selectedIndex;
+      } else if (tab.selectedIndex >= tab.scrollOffset + visibleHeight) {
+        tab.scrollOffset = tab.selectedIndex - visibleHeight + 1;
+      }
+      tab.scrollOffset = Math.max(0, Math.min(tab.scrollOffset, Math.max(0, tab.visibleRows.length - visibleHeight)));
     }
 
     function resize() {
@@ -85,6 +132,10 @@ export async function pickTarget(loadRows: () => Promise<Row[]>): Promise<Target
           selectCurrent();
           return;
         }
+        if (key === "tab") {
+          switchTab();
+          continue;
+        }
         if (key === "down" || key === "ctrl-n" || key === "ctrl-j") {
           moveSelection(1);
           continue;
@@ -94,12 +145,13 @@ export async function pickTarget(loadRows: () => Promise<Row[]>): Promise<Target
           continue;
         }
         if (key === "backspace") {
-          query = Array.from(query).slice(0, -1).join("");
+          const tab = currentTab();
+          tab.query = Array.from(tab.query).slice(0, -1).join("");
           updateList();
           continue;
         }
         if (key.length > 0) {
-          query += key;
+          currentTab().query += key;
           updateList();
         }
       }
@@ -114,20 +166,50 @@ export async function pickTarget(loadRows: () => Promise<Row[]>): Promise<Target
     process.on("SIGINT", restoreForSignal);
     process.on("SIGTERM", restoreForSignal);
     draw();
-
     setTimeout(() => {
+      if (!settled) {
+        loadTab(activeTab, loaderForTab(activeTab));
+      }
+    }, 0);
+
+    function loadTab(tabName: PickerTab, loadRows: () => Promise<Row[]>) {
+      if (settled) return;
+
+      const tab = tabs[tabName];
+      tab.loading = true;
+      draw();
       loadRows().then(
-        (loadedRows) => {
+        (rows) => {
           if (settled) return;
-          allRows = loadedRows;
-          loading = false;
-          updateList();
+          tab.rows = rows;
+          tab.visibleRows = filterRows(rows, tab.query);
+          tab.loading = false;
+          tab.loaded = true;
+          tab.selectedIndex = 0;
+          tab.scrollOffset = 0;
+          draw();
         },
         (error) => {
           finish();
           throw error;
         },
       );
-    }, 0);
+    }
   });
+
+  function loaderForTab(tab: PickerTab) {
+    return tab === "repos" ? loadRepos : loadSessions;
+  }
+}
+
+function createTabState(loading: boolean): TabState {
+  return {
+    loading,
+    loaded: false,
+    rows: [],
+    visibleRows: [],
+    query: "",
+    selectedIndex: 0,
+    scrollOffset: 0,
+  };
 }

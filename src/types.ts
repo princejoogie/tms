@@ -4,6 +4,8 @@ export type Config = {
   excluded: string[];
 };
 
+export type PickerTab = "repos" | "sessions";
+
 export type GitWorktree = {
   path: string;
   head?: string;
@@ -25,6 +27,7 @@ export type Target = {
   display: string;
   path: string;
   sessionName: string;
+  kind?: "repo" | "session";
 };
 
 export type Row = {

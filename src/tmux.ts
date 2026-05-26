@@ -1,15 +1,54 @@
 import { $ } from "bun";
-import type { Target } from "./types";
+import type { Row, Target } from "./types";
 
 export async function openTmuxSession(target: Target) {
+  if (target.kind === "session") {
+    await openExistingTmuxSession(target.sessionName);
+    return;
+  }
+
   if (!(await tmuxHasSession(target.sessionName))) {
     await runTmuxNewSession(target.sessionName, target.path);
   }
 
+  await openExistingTmuxSession(target.sessionName);
+}
+
+export async function listTmuxSessionRows(): Promise<Row[]> {
+  const result = await $`tmux list-sessions -F "#{session_name}"`.quiet().nothrow();
+  if (result.exitCode !== 0) {
+    return [];
+  }
+
+  return parseTmuxSessionRows(result.stdout.toString());
+}
+
+export function parseTmuxSessionRows(output: string): Row[] {
+  return output
+    .toString()
+    .split("\n")
+    .filter(Boolean)
+    .map((name) => {
+      return {
+        label: name,
+        filterText: name,
+        target: {
+          display: name,
+          path: "",
+          sessionName: name,
+          kind: "session",
+        },
+        depth: 0,
+        id: `session:${name}`,
+      } satisfies Row;
+    });
+}
+
+async function openExistingTmuxSession(name: string) {
   if (process.env.TMUX) {
-    await runTmuxSwitchClient(target.sessionName);
+    await runTmuxSwitchClient(name);
   } else {
-    await runTmuxAttachSession(target.sessionName);
+    await runTmuxAttachSession(name);
   }
 }
 

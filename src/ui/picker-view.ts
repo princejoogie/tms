@@ -1,5 +1,5 @@
-import type { Row } from "../types";
-import { type NativeRenderer, positionCursor, rgba } from "./opentui";
+import type { PickerTab, Row } from "../types";
+import { type NativeRenderer, positionCursor, rgba, terminalHeight, terminalWidth } from "./opentui";
 
 export const ROWS_TOP = 4;
 
@@ -11,6 +11,29 @@ const THEME = {
   borderActive: rgba("#606060"),
 };
 
+export function drawBootstrapPicker(activeTab: PickerTab) {
+  const width = terminalWidth();
+  const height = terminalHeight();
+  const innerWidth = Math.max(0, width - 2);
+  const label = activeTab === "repos" ? "Discovering repositories..." : "Loading tmux sessions...";
+  const help = fit("tab to switch | enter to open | esc to cancel | ctrl+n/ctrl+p or arrows to move", Math.max(0, width - 2));
+  const footerY = Math.max(1, height - 1);
+
+  process.stdout.write(
+    [
+      "\x1b[2J\x1b[H",
+      `\x1b[37m┌${"─".repeat(innerWidth)}┐\x1b[0m`,
+      `\x1b[2;1H\x1b[37m│\x1b[0m\x1b[2;${width}H\x1b[37m│\x1b[0m`,
+      `\x1b[3;1H\x1b[37m└${"─".repeat(innerWidth)}┘\x1b[0m`,
+      `\x1b[2;3H\x1b[90mFilter...\x1b[0m`,
+      `\x1b[${ROWS_TOP + 1};2H\x1b[90m${fit(label, Math.max(0, width - 2))}\x1b[0m`,
+      `\x1b[${Math.max(1, footerY - 1)};2H\x1b[90m${help}\x1b[0m`,
+      `\x1b[${footerY};2H${activeTab === "repos" ? "\x1b[37;40m" : "\x1b[90m"} Repos \x1b[0m`,
+      `\x1b[${footerY};11H${activeTab === "sessions" ? "\x1b[37;40m" : "\x1b[90m"} Sessions \x1b[0m`,
+    ].join(""),
+  );
+}
+
 export function drawPicker(input: {
   renderer: NativeRenderer;
   query: string;
@@ -18,19 +41,20 @@ export function drawPicker(input: {
   selectedIndex: number;
   scrollOffset: number;
   loading: boolean;
+  activeTab: PickerTab;
 }) {
-  const { renderer, query, visibleRows, selectedIndex, scrollOffset, loading } = input;
+  const { renderer, query, visibleRows, selectedIndex, scrollOffset, loading, activeTab } = input;
   const visibleHeight = listHeight(renderer.height);
   renderer.clear(THEME.background);
   drawInput(renderer, query);
-  drawRows(renderer, visibleHeight, visibleRows, selectedIndex, scrollOffset, loading);
-  drawFooter(renderer);
+  drawRows(renderer, visibleHeight, visibleRows, selectedIndex, scrollOffset, loading, activeTab);
+  drawTabs(renderer, activeTab);
   renderer.render();
   positionInputCursor(renderer.width, query);
 }
 
 export function listHeight(height: number) {
-  return Math.max(1, height - ROWS_TOP - 1);
+  return Math.max(1, height - ROWS_TOP - 2);
 }
 
 export function fit(text: string, width: number) {
@@ -59,7 +83,7 @@ function drawInput(renderer: NativeRenderer, query: string) {
   renderer.drawText(Math.max(0, renderer.width - 1), 1, "│", THEME.borderActive, THEME.background);
   renderer.drawText(0, 2, `└${"─".repeat(innerWidth)}┘`, THEME.borderActive, THEME.background);
 
-  const value = query || "Filter repositories and worktrees...";
+  const value = query || "Filter...";
   renderer.drawText(2, 1, fit(value, Math.max(0, renderer.width - 4)), query ? THEME.text : THEME.textMuted, THEME.background);
 }
 
@@ -70,9 +94,11 @@ function drawRows(
   selectedIndex: number,
   scrollOffset: number,
   loading: boolean,
+  activeTab: PickerTab,
 ) {
   if (loading) {
-    renderer.drawText(1, ROWS_TOP, "Discovering repositories...", THEME.textMuted, THEME.background);
+    const label = activeTab === "repos" ? "Discovering repositories..." : "Loading tmux sessions...";
+    renderer.drawText(1, ROWS_TOP, label, THEME.textMuted, THEME.background);
     return;
   }
 
@@ -106,14 +132,18 @@ function drawRows(
   }
 }
 
-function drawFooter(renderer: NativeRenderer) {
-  renderer.drawText(
-    1,
-    Math.max(0, renderer.height - 1),
-    fit("type to filter | enter to open | esc to cancel | ctrl+n/ctrl+p or arrows to move", Math.max(0, renderer.width - 2)),
-    THEME.textMuted,
-    THEME.background,
-  );
+function drawTabs(renderer: NativeRenderer, activeTab: PickerTab) {
+  const y = Math.max(0, renderer.height - 1);
+  renderer.drawText(1, Math.max(0, y - 1), fit("tab to switch | enter to open | esc to cancel | ctrl+n/ctrl+p or arrows to move", Math.max(0, renderer.width - 2)), THEME.textMuted, THEME.background);
+  drawTab(renderer, 1, y, "Repos", activeTab === "repos");
+  drawTab(renderer, 10, y, "Sessions", activeTab === "sessions");
+}
+
+function drawTab(renderer: NativeRenderer, x: number, y: number, label: string, active: boolean) {
+  const text = active ? ` ${label} ` : ` ${label} `;
+  const bg = active ? THEME.backgroundElement : THEME.background;
+  const fg = active ? THEME.text : THEME.textMuted;
+  renderer.drawText(x, y, text, fg, bg);
 }
 
 function positionInputCursor(width: number, query: string) {

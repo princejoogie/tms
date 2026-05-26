@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 import { DEFAULT_DEPTH, DEFAULT_EXCLUDED, CONFIG_FILE, defaultConfig, loadConfig, writeConfig } from "./config";
-import type { Config } from "./types";
+import type { Config, PickerTab } from "./types";
 import { expandPath, fail, splitPathArg, unique } from "./utils";
 
 main().catch((error) => {
@@ -9,12 +9,18 @@ main().catch((error) => {
 });
 
 async function main() {
-  const [command, ...args] = process.argv.slice(2);
+  const cliArgs = process.argv.slice(2);
+  const [command, ...args] = cliArgs;
 
   try {
+    if (isPickerCommand(cliArgs)) {
+      await openPicker(parsePickerTab(cliArgs));
+      return;
+    }
+
     switch (command) {
       case undefined:
-        await openPicker();
+        await openPicker("repos");
         break;
       case "config":
         configure(args);
@@ -103,10 +109,9 @@ function configure(args: string[]) {
   printConfig(next);
 }
 
-async function openPicker() {
-  const config = loadConfig(true);
+async function openPicker(defaultTab: PickerTab) {
   const { pickTarget } = await import("./picker");
-  const target = await pickTarget(() => loadRows(config));
+  const target = await pickTarget(loadRows, loadSessionRows, defaultTab);
 
   if (!target) {
     process.exit(0);
@@ -116,7 +121,8 @@ async function openPicker() {
   await openTmuxSession(target);
 }
 
-async function loadRows(config: Config) {
+async function loadRows() {
+  const config = loadConfig(true);
   const [{ discoverRepos }, { buildRows }] = await Promise.all([import("./git"), import("./rows")]);
   const rows = buildRows(await discoverRepos(config));
 
@@ -127,13 +133,58 @@ async function loadRows(config: Config) {
   return rows;
 }
 
+async function loadSessionRows() {
+  const { listTmuxSessionRows } = await import("./tmux");
+  return listTmuxSessionRows();
+}
+
+function isPickerCommand(args: string[]) {
+  return args.length > 0 && args[0].startsWith("--tab");
+}
+
+function parsePickerTab(args: string[]): PickerTab {
+  let tab: PickerTab = "repos";
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === "--tab") {
+      const value = args[index + 1];
+      if (!value) {
+        throw new Error("Missing value for --tab. Expected repos or sessions.");
+      }
+      tab = parseTabValue(value);
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith("--tab=")) {
+      tab = parseTabValue(arg.slice("--tab=".length));
+      continue;
+    }
+
+    throw new Error(`Unknown picker option: ${arg}`);
+  }
+
+  return tab;
+}
+
+function parseTabValue(value: string): PickerTab {
+  const normalized = value.toLowerCase();
+  if (normalized === "repos" || normalized === "sessions") {
+    return normalized;
+  }
+
+  throw new Error("Invalid value for --tab. Expected repos or sessions.");
+}
+
 function printConfig(config: Config) {
   console.log(JSON.stringify(config, null, 2));
   console.log(`\nConfig: ${CONFIG_FILE}`);
 }
 
 function printHelp() {
-  console.log(`Usage: tms [command]\n\nCommands:\n  config    Configure search paths and depth\n  help      Print this help\n\nRunning \`tms\` without a command opens the picker.`);
+  console.log(`Usage: tms [--tab repos|sessions] [command]\n\nCommands:\n  config    Configure search paths and depth\n  help      Print this help\n\nRunning \`tms\` without a command opens the picker.`);
 }
 
 function printConfigHelp() {

@@ -32,6 +32,7 @@ function parseSequence(input: string): { key: string; length: number } | undefin
   const terminalReplyLength = parseTerminalReplyLength(input);
   if (terminalReplyLength) return { key: "", length: terminalReplyLength };
   if (input.startsWith("\x7f") || input.startsWith("\b")) return { key: "backspace", length: 1 };
+  if (input.startsWith("\t")) return { key: "tab", length: 1 };
   if (input.startsWith("\x03")) return { key: "ctrl-c", length: 1 };
   if (input.startsWith("\x0e")) return { key: "ctrl-n", length: 1 };
   if (input.startsWith("\x10")) return { key: "ctrl-p", length: 1 };

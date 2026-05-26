@@ -18,6 +18,7 @@ const benches: Bench[] = [
   { name: "tms config --show", command: "./dist/tms config --show", warmup: 10 },
   { name: "picker fixture render+esc", command: `printf "\\033" | ${tmpDir}/picker-fixture`, warmup: 10 },
   { name: "tms picker discovery+render+esc", command: "printf \"\\033\" | ./dist/tms", warmup: 5, runs: 20 },
+  { name: "tms sessions tab render+esc", command: "printf \"\\033\" | ./dist/tms --tab=sessions", warmup: 5, runs: 20 },
 ];
 
 if (!existsSync(tmpDir)) {
@@ -120,7 +121,7 @@ const rows: Row[] = Array.from({ length: 40 }, (_, index) => ({
   id: \`bench-\${index}\`,
 }));
 
-await pickTarget(async () => rows);
+await pickTarget(async () => rows, async () => []);
 `,
   );
 }

@@ -19,6 +19,7 @@ export function buildRows(groups: RepoGroup[]): Row[] {
         display: group.name,
         path: group.path,
         sessionName: sessionName(group.name),
+        kind: "repo",
       },
     });
 
@@ -39,6 +40,7 @@ export function buildRows(groups: RepoGroup[]): Row[] {
           display: `${group.name}/${label}`,
           path: worktree.path,
           sessionName: sessionName(`${group.name}_${label}`),
+          kind: "repo",
         },
       });
     });
