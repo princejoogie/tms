@@ -1,13 +1,8 @@
 #!/usr/bin/env bun
 
 import { DEFAULT_DEPTH, DEFAULT_EXCLUDED, CONFIG_FILE, defaultConfig, loadConfig, writeConfig } from "./config";
-import { discoverRepos } from "./git";
-import { expandPath, splitPathArg, unique } from "./path-utils";
-import { pickTarget } from "./picker";
-import { buildRows } from "./rows";
-import { openTmuxSession } from "./tmux";
 import type { Config } from "./types";
-import { fail } from "./utils";
+import { expandPath, fail, splitPathArg, unique } from "./utils";
 
 main().catch((error) => {
   fail(error instanceof Error ? error.message : String(error));
@@ -109,17 +104,27 @@ function configure(args: string[]) {
 }
 
 async function openPicker() {
-  const rows = buildRows(await discoverRepos(loadConfig(true)));
-  if (rows.length === 0) {
-    throw new Error("No Git repositories found in configured paths.");
-  }
+  const config = loadConfig(true);
+  const { pickTarget } = await import("./picker");
+  const target = await pickTarget(() => loadRows(config));
 
-  const target = await pickTarget(rows);
   if (!target) {
     process.exit(0);
   }
 
+  const { openTmuxSession } = await import("./tmux");
   await openTmuxSession(target);
+}
+
+async function loadRows(config: Config) {
+  const [{ discoverRepos }, { buildRows }] = await Promise.all([import("./git"), import("./rows")]);
+  const rows = buildRows(await discoverRepos(config));
+
+  if (rows.length === 0) {
+    throw new Error("No Git repositories found in configured paths.");
+  }
+
+  return rows;
 }
 
 function printConfig(config: Config) {

@@ -90,7 +90,7 @@ jobs:
 
       - name: Build Binary
         shell: bash
-        run: bun build src/index.ts --compile --outfile="dist/${{ matrix.asset }}"
+        run: bun run scripts/build.ts --outfile "dist/${{ matrix.asset }}"
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
