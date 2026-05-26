@@ -1,5 +1,11 @@
 # tms
 
+## 0.1.4
+
+### Patch Changes
+
+- [#8](https://github.com/princejoogie/tms/pull/8) [`ac06fbc`](https://github.com/princejoogie/tms/commit/ac06fbc05c48299995c471ff5c9712e1268708fb) Thanks [@princejoogie](https://github.com/princejoogie)! - Improve picker startup without repository caching by rendering a loading UI before discovery, moving OpenTUI drawing helpers under `src/ui`, and centralizing binary builds in `scripts/build.ts`. Fix raw picker key parsing so `Ctrl-J` cycles down the list instead of selecting the current item.
+
 ## 0.1.3
 
 ### Patch Changes
