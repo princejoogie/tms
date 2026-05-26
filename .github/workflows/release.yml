@@ -42,7 +42,7 @@ jobs:
       - name: Detect Version Release
         id: version
         run: |
-          CURRENT_VERSION=$(bun -e 'console.log((await import("./package.json")).default.version)')
+          CURRENT_VERSION=$(git show HEAD:package.json | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
           PREVIOUS_VERSION=$(git show HEAD^:package.json | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
 
           if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
