@@ -31,13 +31,13 @@ function parseSequence(input: string): { key: string; length: number } | undefin
   if (input.startsWith("\x1b[3~")) return { key: "delete", length: 4 };
   const terminalReplyLength = parseTerminalReplyLength(input);
   if (terminalReplyLength) return { key: "", length: terminalReplyLength };
-  if (input.startsWith("\r") || input.startsWith("\n")) return { key: "enter", length: 1 };
   if (input.startsWith("\x7f") || input.startsWith("\b")) return { key: "backspace", length: 1 };
   if (input.startsWith("\x03")) return { key: "ctrl-c", length: 1 };
   if (input.startsWith("\x0e")) return { key: "ctrl-n", length: 1 };
   if (input.startsWith("\x10")) return { key: "ctrl-p", length: 1 };
   if (input.startsWith("\x0a")) return { key: "ctrl-j", length: 1 };
   if (input.startsWith("\x0b")) return { key: "ctrl-k", length: 1 };
+  if (input.startsWith("\r")) return { key: "enter", length: 1 };
   if (input.startsWith("\x1b")) return { key: "escape", length: 1 };
   return undefined;
 }

@@ -2,10 +2,11 @@ import { expect, test } from "bun:test";
 import { parseKeys } from "../picker-keys";
 
 test("parses picker navigation keys", () => {
-  expect(parseKeys("\x1b[A\x1b[B\x0e\x10\r\x7f")).toEqual([
+  expect(parseKeys("\x1b[A\x1b[B\x0e\x0a\x10\r\x7f")).toEqual([
     "up",
     "down",
     "ctrl-n",
+    "ctrl-j",
     "ctrl-p",
     "enter",
     "backspace",
