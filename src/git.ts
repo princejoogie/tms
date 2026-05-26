@@ -2,7 +2,7 @@ import { $ } from "bun";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { Config, GitWorktree, RepoGroup } from "./types";
-import { realPath } from "./path-utils";
+import { realPath } from "./utils";
 
 type DirectoryIgnoreRule = {
   name: string;
@@ -17,25 +17,32 @@ export async function discoverRepos(config: Config): Promise<RepoGroup[]> {
   }
 
   const groups = new Map<string, RepoGroup>();
+  const discoveredGroups = await Promise.all(
+    [...repoPaths].map(async (repoPath) => {
+      const worktrees = await gitWorktrees(repoPath);
+      const main = worktrees.find((worktree) => !worktree.bare && !worktree.prunable);
 
-  for (const repoPath of repoPaths) {
-    const worktrees = await gitWorktrees(repoPath);
-    const main = worktrees.find((worktree) => !worktree.bare && !worktree.prunable);
+      if (!main) {
+        return undefined;
+      }
 
-    if (!main || groups.has(main.path)) {
-      continue;
+      return {
+        id: main.path,
+        name: basename(main.path),
+        path: main.path,
+        branch: main.branch,
+        worktrees: worktrees.filter(
+          (worktree) =>
+            !worktree.bare && !worktree.prunable && realPath(worktree.path) !== realPath(main.path),
+        ),
+      } satisfies RepoGroup;
+    }),
+  );
+
+  for (const group of discoveredGroups) {
+    if (group && !groups.has(group.id)) {
+      groups.set(group.id, group);
     }
-
-    groups.set(main.path, {
-      id: main.path,
-      name: basename(main.path),
-      path: main.path,
-      branch: main.branch,
-      worktrees: worktrees.filter(
-        (worktree) =>
-          !worktree.bare && !worktree.prunable && realPath(worktree.path) !== realPath(main.path),
-      ),
-    });
   }
 
   return withUniqueRepoNames([...groups.values()]);
@@ -56,12 +63,8 @@ function walkForRepos(
     { path: root, depth: 0, ignoredDirs: excluded },
   ];
 
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) {
-      break;
-    }
-
+  for (let index = 0; index < queue.length; index += 1) {
+    const current = queue[index];
     if (hasGitEntry(current.path)) {
       repoPaths.add(realPath(current.path));
       continue;

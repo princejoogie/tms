@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Config } from "./types";
-import { expandPath } from "./path-utils";
+import { expandPath } from "./utils";
 
 export const DEFAULT_DEPTH = 3;
 export const DEFAULT_EXCLUDED = [

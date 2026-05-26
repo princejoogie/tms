@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { basename } from "node:path";
 import type { GitWorktree, RepoGroup, Row } from "./types";
 
+export { filterRows } from "./filter";
+
 export function buildRows(groups: RepoGroup[]): Row[] {
   const rows: Row[] = [];
   const sortedGroups = [...groups].sort((a, b) => a.name.localeCompare(b.name));
@@ -44,26 +46,6 @@ export function buildRows(groups: RepoGroup[]): Row[] {
 
   disambiguateSessionNames(rows);
   return rows;
-}
-
-export function filterRows(rows: Row[], query: string): Row[] {
-  const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) {
-    return rows;
-  }
-
-  const matched = new Set<string>();
-  for (const row of rows) {
-    const search = row.filterText.toLowerCase();
-    if (tokens.every((token) => search.includes(token))) {
-      matched.add(row.id);
-      if (row.parentId) {
-        matched.add(row.parentId);
-      }
-    }
-  }
-
-  return rows.filter((row) => matched.has(row.id));
 }
 
 function worktreeLabel(worktree: GitWorktree) {
