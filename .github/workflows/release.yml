@@ -41,9 +41,12 @@ jobs:
 
       - name: Detect Version Release
         id: version
+        env:
+          CURRENT_SHA: ${{ github.sha }}
+          PREVIOUS_SHA: ${{ github.event.before }}
         run: |
-          CURRENT_VERSION=$(git show HEAD:package.json | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
-          PREVIOUS_VERSION=$(git show HEAD^:package.json | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
+          CURRENT_VERSION=$(git show "$CURRENT_SHA:package.json" | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
+          PREVIOUS_VERSION=$(git show "$PREVIOUS_SHA:package.json" | bun -e 'const input = await Bun.stdin.text(); console.log(JSON.parse(input).version)')
 
           if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
             echo "released=true" >> "$GITHUB_OUTPUT"
