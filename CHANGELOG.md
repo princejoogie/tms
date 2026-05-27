@@ -1,5 +1,27 @@
 # tms
 
+## 0.2.0
+
+### Minor Changes
+
+- [`d8291f5`](https://github.com/princejoogie/tms/commit/d8291f58ef89dbad16c869008281ef330ffd2c61) Thanks [@princejoogie](https://github.com/princejoogie)! - Add a tabbed OpenTUI picker with separate Repos and Sessions views.
+
+  Repos remains the default tab and keeps the existing repository/worktree workflow. Sessions is a new tab that lists existing tmux sessions by name and opens the selected session by switching the current tmux client or attaching from outside tmux.
+
+  Add `--tab repos|sessions` and `--tab=repos|sessions` so keybindings can choose the initial view. The `Tab` key cycles between Repos and Sessions inside the picker.
+
+  Improve perceived picker startup without repository caching. The picker now renders an immediate lightweight loading frame before OpenTUI native initialization, defers repository discovery until after the first render, and skips config/git/worktree discovery entirely when starting directly on `--tab=sessions` until the user switches to Repos.
+
+  Improve picker reliability and polish by fixing raw key parsing so `Ctrl-J` moves down instead of selecting the current row, preserving stale terminal replies from becoming input, keeping cursor positioning stable, and showing only tmux session names in the Sessions tab.
+
+  Refactor the picker implementation into smaller UI modules, centralize build compilation through `scripts/build.ts`, and add reusable benchmark coverage for built binaries and picker startup paths.
+
+### Patch Changes
+
+- [`f43c282`](https://github.com/princejoogie/tms/commit/f43c2823b2415a6738d8c425be80bd22353cc2c3) Thanks [@princejoogie](https://github.com/princejoogie)! - Add fuzzy subsequence matching to picker filtering while preserving parent/child row context.
+
+  Improve picker error handling so async loader, render, resize, setup, and cleanup failures restore the terminal and surface the original error instead of exiting as a cancelled selection.
+
 ## 0.1.4
 
 ### Patch Changes
