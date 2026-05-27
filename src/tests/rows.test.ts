@@ -45,3 +45,11 @@ test("filter 'retail develop' includes parent context before child", () => {
 test("filter 'awesome' matches correctly", () => {
   expect(runFilter("awesome")).toEqual([4]);
 });
+
+test("filter fuzzily matches repo names", () => {
+  expect(runFilter("lngvue")).toEqual([0]);
+});
+
+test("filter fuzzily matches child rows with parent context", () => {
+  expect(runFilter("rtdev")).toEqual([1, 2]);
+});

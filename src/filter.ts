@@ -9,7 +9,7 @@ export function filterRows(rows: Row[], query: string): Row[] {
   const matched = new Set<string>();
   for (const row of rows) {
     const search = row.filterText.toLowerCase();
-    if (tokens.every((token) => search.includes(token))) {
+    if (tokens.every((token) => fuzzyMatch(search, token))) {
       matched.add(row.id);
       if (row.parentId) {
         matched.add(row.parentId);
@@ -18,4 +18,18 @@ export function filterRows(rows: Row[], query: string): Row[] {
   }
 
   return rows.filter((row) => matched.has(row.id));
+}
+
+function fuzzyMatch(search: string, token: string) {
+  let searchIndex = 0;
+
+  for (const char of token) {
+    searchIndex = search.indexOf(char, searchIndex);
+    if (searchIndex === -1) {
+      return false;
+    }
+    searchIndex += char.length;
+  }
+
+  return true;
 }

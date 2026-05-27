@@ -39,23 +39,39 @@ export async function pickTarget(
     sessions: createTabState(defaultTab === "sessions"),
   };
 
-  return new Promise((resolveTarget) => {
+  return new Promise((resolveTarget, rejectTarget) => {
     const restoreForSignal = () => finish();
 
-    const finish = (target?: Target) => {
+    const finish = (target?: Target, error?: unknown) => {
       if (settled) return;
       settled = true;
+      let cleanupError: unknown;
+      const cleanup = (step: () => void) => {
+        try {
+          step();
+        } catch (error) {
+          cleanupError ??= error;
+        }
+      };
+
       process.off("SIGWINCH", resize);
       process.off("SIGINT", restoreForSignal);
       process.off("SIGTERM", restoreForSignal);
       stdin.off("data", handleInput);
       if (stdin.setRawMode) {
-        stdin.setRawMode(Boolean(wasRaw));
+        cleanup(() => stdin.setRawMode(Boolean(wasRaw)));
       }
-      stdin.pause();
-      renderer.destroy();
-      restoreTerminal();
-      resolveTarget(target);
+      cleanup(() => stdin.pause());
+      cleanup(() => renderer.destroy());
+      cleanup(restoreTerminal);
+
+      if (error) {
+        rejectTarget(error);
+      } else if (cleanupError) {
+        rejectTarget(cleanupError);
+      } else {
+        resolveTarget(target);
+      }
     };
 
     const draw = () => {
@@ -118,54 +134,68 @@ export async function pickTarget(
     }
 
     function resize() {
-      renderer.resize();
-      draw();
-    }
-
-    function handleInput(chunk: Buffer) {
-      for (const key of parseKeys(chunk.toString("utf8"))) {
-        if (key === "escape" || key === "ctrl-c") {
-          finish();
-          return;
-        }
-        if (key === "enter") {
-          selectCurrent();
-          return;
-        }
-        if (key === "tab") {
-          switchTab();
-          continue;
-        }
-        if (key === "down" || key === "ctrl-n" || key === "ctrl-j") {
-          moveSelection(1);
-          continue;
-        }
-        if (key === "up" || key === "ctrl-p" || key === "ctrl-k") {
-          moveSelection(-1);
-          continue;
-        }
-        if (key === "backspace") {
-          const tab = currentTab();
-          tab.query = Array.from(tab.query).slice(0, -1).join("");
-          updateList();
-          continue;
-        }
-        if (key.length > 0) {
-          currentTab().query += key;
-          updateList();
-        }
+      try {
+        renderer.resize();
+        draw();
+      } catch (error) {
+        finish(undefined, error);
       }
     }
 
-    if (stdin.setRawMode) {
-      stdin.setRawMode(true);
+    function handleInput(chunk: Buffer) {
+      try {
+        for (const key of parseKeys(chunk.toString("utf8"))) {
+          if (key === "escape" || key === "ctrl-c") {
+            finish();
+            return;
+          }
+          if (key === "enter") {
+            selectCurrent();
+            return;
+          }
+          if (key === "tab") {
+            switchTab();
+            continue;
+          }
+          if (key === "down" || key === "ctrl-n" || key === "ctrl-j") {
+            moveSelection(1);
+            continue;
+          }
+          if (key === "up" || key === "ctrl-p" || key === "ctrl-k") {
+            moveSelection(-1);
+            continue;
+          }
+          if (key === "backspace") {
+            const tab = currentTab();
+            tab.query = Array.from(tab.query).slice(0, -1).join("");
+            updateList();
+            continue;
+          }
+          if (key.length > 0) {
+            currentTab().query += key;
+            updateList();
+          }
+        }
+      } catch (error) {
+        finish(undefined, error);
+      }
     }
-    stdin.resume();
-    stdin.on("data", handleInput);
-    process.on("SIGWINCH", resize);
-    process.on("SIGINT", restoreForSignal);
-    process.on("SIGTERM", restoreForSignal);
-    draw();
+
+    try {
+      if (stdin.setRawMode) {
+        stdin.setRawMode(true);
+      }
+      stdin.resume();
+      stdin.on("data", handleInput);
+      process.on("SIGWINCH", resize);
+      process.on("SIGINT", restoreForSignal);
+      process.on("SIGTERM", restoreForSignal);
+      draw();
+    } catch (error) {
+      finish(undefined, error);
+      return;
+    }
+
     setTimeout(() => {
       if (!settled) {
         loadTab(activeTab, loaderForTab(activeTab));
@@ -176,10 +206,17 @@ export async function pickTarget(
       if (settled) return;
 
       const tab = tabs[tabName];
-      tab.loading = true;
-      draw();
-      loadRows().then(
-        (rows) => {
+      try {
+        tab.loading = true;
+        draw();
+      } catch (error) {
+        finish(undefined, error);
+        return;
+      }
+
+      void (async () => {
+        try {
+          const rows = await loadRows();
           if (settled) return;
           tab.rows = rows;
           tab.visibleRows = filterRows(rows, tab.query);
@@ -188,12 +225,10 @@ export async function pickTarget(
           tab.selectedIndex = 0;
           tab.scrollOffset = 0;
           draw();
-        },
-        (error) => {
-          finish();
-          throw error;
-        },
-      );
+        } catch (error) {
+          finish(undefined, error);
+        }
+      })();
     }
   });
 
