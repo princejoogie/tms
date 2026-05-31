@@ -9,7 +9,8 @@ const args = process.argv.slice(2);
 const out = valueFor("--out") ?? join(rootDir, "docs", "screenshots", "tms-picker");
 const cols = valueFor("--cols") ?? "100";
 const rows = valueFor("--rows") ?? "28";
-const waitFor = valueFor("--wait-for") ?? "tms";
+const waitFor = valueFor("--wait-for") ?? "cookmu";
+const demoPath = valueFor("--path") ?? resolve(rootDir, "..");
 const configPath = join(rootDir, ".tmp", "cellshot", "config.json");
 const binaryPath = join(rootDir, "dist", process.platform === "win32" ? "tms.exe" : "tms");
 
@@ -52,9 +53,9 @@ writeFileSync(
   configPath,
   `${JSON.stringify(
     {
-      paths: [rootDir],
-      depth: 0,
-      excluded: [".git", "dist", "node_modules", "target"],
+      paths: [demoPath],
+      depth: 1,
+      excluded: [".git", "dist", "node_modules", "target", ".tmp"],
     },
     null,
     2,

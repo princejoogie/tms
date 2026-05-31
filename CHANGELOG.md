@@ -1,5 +1,11 @@
 # tms
 
+## 0.3.2
+
+### Patch Changes
+
+- Restore the README demo screenshot to the multi-repo Cellshot capture and make the screenshot script default to the parent personal projects directory so it does not regress to a one-repo image.
+
 ## 0.3.1
 
 ### Patch Changes

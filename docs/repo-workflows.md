@@ -44,10 +44,10 @@ cargo install --locked --git https://github.com/kitlangton/cellshot cellshot
 
 The screenshot script writes an isolated config under `.tmp/cellshot/config.json` so captures do not depend on a user's personal `~/.config/tms/config.json`.
 
-Override the default capture shape if needed:
+Override the default capture shape or repo root if needed:
 
 ```sh
-bun run screenshot -- --cols 120 --rows 34 --out docs/screenshots/wide-picker
+bun run screenshot -- --cols 120 --rows 34 --path /Users/pjuguilon/Documents/codes/personal --out docs/screenshots/wide-picker
 ```
 
 ## CI
