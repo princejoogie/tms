@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { DEFAULT_DEPTH, DEFAULT_EXCLUDED, CONFIG_FILE, defaultConfig, loadConfig, writeConfig } from "./config";
+import packageJson from "../package.json" with { type: "json" };
 import type { Config, PickerTab } from "./types";
 import { expandPath, fail, splitPathArg, unique } from "./utils";
 
@@ -29,6 +30,10 @@ async function main() {
       case "--help":
       case "-h":
         printHelp();
+        break;
+      case "--version":
+      case "-v":
+        console.log(packageJson.version);
         break;
       default:
         fail(`Unknown command: ${command}\nRun \`tms --help\` for usage.`);

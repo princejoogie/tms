@@ -3,6 +3,8 @@ import { type NativeRenderer, positionCursor, rgba, terminalHeight, terminalWidt
 
 export const ROWS_TOP = 4;
 
+const HELP_TEXT = "tab to switch | enter to open | ctrl+y to copy path | esc to cancel | ctrl+n/ctrl+p or arrows to move";
+
 const THEME = {
   text: rgba("#eeeeee"),
   textMuted: rgba("#808080"),
@@ -16,7 +18,7 @@ export function drawBootstrapPicker(activeTab: PickerTab) {
   const height = terminalHeight();
   const innerWidth = Math.max(0, width - 2);
   const label = activeTab === "repos" ? "Discovering repositories..." : "Loading tmux sessions...";
-  const help = fit("tab to switch | enter to open | esc to cancel | ctrl+n/ctrl+p or arrows to move", Math.max(0, width - 2));
+  const help = fit(HELP_TEXT, Math.max(0, width - 2));
   const footerY = Math.max(1, height - 1);
 
   process.stdout.write(
@@ -42,13 +44,14 @@ export function drawPicker(input: {
   scrollOffset: number;
   loading: boolean;
   activeTab: PickerTab;
+  statusMessage?: string;
 }) {
-  const { renderer, query, visibleRows, selectedIndex, scrollOffset, loading, activeTab } = input;
+  const { renderer, query, visibleRows, selectedIndex, scrollOffset, loading, activeTab, statusMessage } = input;
   const visibleHeight = listHeight(renderer.height);
   renderer.clear(THEME.background);
   drawInput(renderer, query);
   drawRows(renderer, visibleHeight, visibleRows, selectedIndex, scrollOffset, loading, activeTab);
-  drawTabs(renderer, activeTab);
+  drawTabs(renderer, activeTab, statusMessage);
   renderer.render();
   positionInputCursor(renderer.width, query);
 }
@@ -132,9 +135,9 @@ function drawRows(
   }
 }
 
-function drawTabs(renderer: NativeRenderer, activeTab: PickerTab) {
+function drawTabs(renderer: NativeRenderer, activeTab: PickerTab, statusMessage = "") {
   const y = Math.max(0, renderer.height - 1);
-  renderer.drawText(1, Math.max(0, y - 1), fit("tab to switch | enter to open | esc to cancel | ctrl+n/ctrl+p or arrows to move", Math.max(0, renderer.width - 2)), THEME.textMuted, THEME.background);
+  renderer.drawText(1, Math.max(0, y - 1), fit(statusMessage || HELP_TEXT, Math.max(0, renderer.width - 2)), THEME.textMuted, THEME.background);
   drawTab(renderer, 1, y, "Repos", activeTab === "repos");
   drawTab(renderer, 10, y, "Sessions", activeTab === "sessions");
 }

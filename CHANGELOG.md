@@ -1,5 +1,13 @@
 # tms
 
+## 0.3.0
+
+### Minor Changes
+
+- Add orch-style private CLI packaging and release workflows with standalone tarball assets, SHA-256 checksums, package smoke tests, CI verification, and `tms --version` support.
+
+- Add repo path copy support from the picker with `Ctrl-Y` and regression coverage for copyable repo/worktree paths.
+
 ## 0.2.0
 
 ### Minor Changes

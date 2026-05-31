@@ -1,3 +1,5 @@
+import { copyToClipboard } from "./clipboard";
+import { copyableRepoPath } from "./copy-path";
 import { filterRows } from "./filter";
 import { parseKeys } from "./picker-keys";
 import type { PickerTab, Row, Target } from "./types";
@@ -34,6 +36,8 @@ export async function pickTarget(
   const wasRaw = stdin.isRaw;
   let settled = false;
   let activeTab = defaultTab;
+  let statusMessage = "";
+  let statusTimer: ReturnType<typeof setTimeout> | undefined;
   const tabs: Record<PickerTab, TabState> = {
     repos: createTabState(defaultTab === "repos"),
     sessions: createTabState(defaultTab === "sessions"),
@@ -57,6 +61,9 @@ export async function pickTarget(
       process.off("SIGWINCH", resize);
       process.off("SIGINT", restoreForSignal);
       process.off("SIGTERM", restoreForSignal);
+      if (statusTimer) {
+        clearTimeout(statusTimer);
+      }
       stdin.off("data", handleInput);
       if (stdin.setRawMode) {
         cleanup(() => stdin.setRawMode(Boolean(wasRaw)));
@@ -85,6 +92,7 @@ export async function pickTarget(
         scrollOffset: tab.scrollOffset,
         loading: tab.loading,
         activeTab,
+        statusMessage,
       });
     };
 
@@ -118,6 +126,35 @@ export async function pickTarget(
       draw();
     };
 
+    const setStatus = (message: string) => {
+      statusMessage = message;
+      draw();
+
+      if (statusTimer) {
+        clearTimeout(statusTimer);
+      }
+
+      statusTimer = setTimeout(() => {
+        if (settled || statusMessage !== message) return;
+        statusMessage = "";
+        draw();
+      }, 1500);
+    };
+
+    const copyCurrentPath = () => {
+      const tab = currentTab();
+      if (tab.loading) return;
+
+      const path = copyableRepoPath(tab.visibleRows[tab.selectedIndex]);
+      if (!path) {
+        setStatus("No repo path to copy");
+        return;
+      }
+
+      copyToClipboard(path);
+      finish();
+    };
+
     function currentTab() {
       return tabs[activeTab];
     }
@@ -147,6 +184,10 @@ export async function pickTarget(
         for (const key of parseKeys(chunk.toString("utf8"))) {
           if (key === "escape" || key === "ctrl-c") {
             finish();
+            return;
+          }
+          if (key === "ctrl-y") {
+            copyCurrentPath();
             return;
           }
           if (key === "enter") {

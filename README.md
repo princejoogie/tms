@@ -19,8 +19,9 @@ A blazing fast sessionizer written in [Bun](https://bun.sh/) and TypeScript. `tm
 Head over to the [Releases](https://github.com/princejoogie/tms/releases) page and download the pre-compiled binary for your architecture (macOS or Linux).
 
 ```sh
-chmod +x tms-darwin-arm64
-mv tms-darwin-arm64 ~/.local/bin/tms
+tar -xzf tms-darwin-arm64.tar.gz
+chmod +x tms
+mv tms ~/.local/bin/tms
 ```
 
 ### Build from Source
@@ -73,11 +74,13 @@ tms
 
 Contributions are welcome!
 
-```sh
-# Run typechecking
-bunx tsc --noEmit
+Repository workflow details are documented in [docs/repo-workflows.md](docs/repo-workflows.md).
 
-# Run tests
+```sh
+# Run local checks
+bun run check
+
+# Run tests only
 bun test
 
 # Run directly without compiling

@@ -1,4 +1,4 @@
-name: Release
+name: Release version
 
 on:
   push:
@@ -62,41 +62,3 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           gh release view "v$VERSION" >/dev/null 2>&1 || gh release create "v$VERSION" --title "v$VERSION" --notes "Release v$VERSION"
-
-  build-assets:
-    name: Build ${{ matrix.asset }}
-    needs: release
-    if: needs.release.outputs.released == 'true'
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            asset: tms-darwin
-          - os: ubuntu-latest
-            asset: tms-linux
-          - os: windows-latest
-            asset: tms-windows.exe
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install Dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build Binary
-        shell: bash
-        run: bun run scripts/build.ts --outfile "dist/${{ matrix.asset }}"
-
-      - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ needs.release.outputs.version }}
-          files: dist/${{ matrix.asset }}

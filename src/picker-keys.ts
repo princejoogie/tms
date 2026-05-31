@@ -36,6 +36,7 @@ function parseSequence(input: string): { key: string; length: number } | undefin
   if (input.startsWith("\x03")) return { key: "ctrl-c", length: 1 };
   if (input.startsWith("\x0e")) return { key: "ctrl-n", length: 1 };
   if (input.startsWith("\x10")) return { key: "ctrl-p", length: 1 };
+  if (input.startsWith("\x19")) return { key: "ctrl-y", length: 1 };
   if (input.startsWith("\x0a")) return { key: "ctrl-j", length: 1 };
   if (input.startsWith("\x0b")) return { key: "ctrl-k", length: 1 };
   if (input.startsWith("\r")) return { key: "enter", length: 1 };
