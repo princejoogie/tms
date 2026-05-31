@@ -4,6 +4,8 @@
 
 A blazing fast sessionizer written in [Bun](https://bun.sh/) and TypeScript. `tms` smartly discovers your Git repositories and automatically groups Git Worktrees underneath their parent repository, keeping your session switcher clean and organized.
 
+![tms picker screenshot](docs/screenshots/tms-picker.png)
+
 ## Features
 
 - 🌳 **Worktree Aware:** Groups `git worktree` instances directly under their parent repository in the TUI picker.

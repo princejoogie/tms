@@ -9,6 +9,7 @@ These are the repository workflow conventions for `tms` as a private CLI with st
 - `bun run test`: Bun tests.
 - `bun run package:smoke`: builds the binary and checks `--help`/`--version`.
 - `bun run build:standalone`: creates release tarballs and `.sha256` files for the current or requested target.
+- `bun run screenshot`: builds `tms` and captures a PNG/TXT terminal screenshot with Cellshot.
 
 Run `bun run check` before handing off substantial changes.
 
@@ -29,6 +30,27 @@ Examples:
 bun run build:standalone
 bun run build:standalone -- linux-x64
 bun run build:standalone -- all
+```
+
+## Terminal Screenshots
+
+`bun run screenshot` uses [Cellshot](https://github.com/kitlangton/cellshot) to capture the real OpenTUI terminal output into:
+
+- `docs/screenshots/tms-picker.png`
+- `docs/screenshots/tms-picker.txt`
+
+Install Cellshot first if it is not already available:
+
+```sh
+cargo install --locked --git https://github.com/kitlangton/cellshot cellshot
+```
+
+The screenshot script writes an isolated config under `.tmp/cellshot/config.json` so captures do not depend on a user's personal `~/.config/tms/config.json`.
+
+Override the default capture shape if needed:
+
+```sh
+bun run screenshot -- --cols 120 --rows 34 --out docs/screenshots/wide-picker
 ```
 
 ## CI

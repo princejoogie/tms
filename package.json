@@ -14,6 +14,7 @@
     "build": "bun run scripts/build.ts",
     "build:debug": "bun run scripts/build.ts --sourcemap",
     "build:standalone": "bun run scripts/build-standalone.ts",
+    "screenshot": "bun run scripts/screenshot.ts",
     "benchmark": "bun run scripts/benchmark.ts",
     "changeset": "npm exec --package @changesets/cli@2.31.0 -- changeset",
     "changeset:status": "npm exec --package @changesets/cli@2.31.0 -- changeset status",
