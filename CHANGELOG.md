@@ -1,5 +1,11 @@
 # tms
 
+## 0.3.1
+
+### Patch Changes
+
+- Use the real repos-list Cellshot capture as the README demo image and remove the unused text screenshot artifact from the screenshot workflow.
+
 ## 0.3.0
 
 ### Minor Changes

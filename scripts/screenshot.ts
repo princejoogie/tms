@@ -78,8 +78,6 @@ run(
     "10000",
     "--format",
     "png",
-    "--format",
-    "txt",
     "--out",
     out,
     "--",
@@ -88,4 +86,4 @@ run(
   { env: { TMS_CONFIG_FILE: configPath } },
 );
 
-console.log(`Saved ${out}.png and ${out}.txt`);
+console.log(`Saved ${out}.png`);

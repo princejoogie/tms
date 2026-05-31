@@ -34,10 +34,7 @@ bun run build:standalone -- all
 
 ## Terminal Screenshots
 
-`bun run screenshot` uses [Cellshot](https://github.com/kitlangton/cellshot) to capture the real OpenTUI terminal output into:
-
-- `docs/screenshots/tms-picker.png`
-- `docs/screenshots/tms-picker.txt`
+`bun run screenshot` uses [Cellshot](https://github.com/kitlangton/cellshot) to capture the real OpenTUI terminal output into `docs/screenshots/tms-picker.png`.
 
 Install Cellshot first if it is not already available:
 
