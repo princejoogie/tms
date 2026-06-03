@@ -1,5 +1,11 @@
 # tms
 
+## 0.3.3
+
+### Patch Changes
+
+- Use exact tmux session targets so opening `opencode` no longer switches to an existing `opencode-mobile` session.
+
 ## 0.3.2
 
 ### Patch Changes
