@@ -53,7 +53,7 @@ async function openExistingTmuxSession(name: string) {
 }
 
 async function tmuxHasSession(name: string) {
-  const result = await $`tmux has-session -t ${name}`.quiet().nothrow();
+  const result = await $`tmux has-session -t ${exactTmuxSessionTarget(name)}`.quiet().nothrow();
   return result.exitCode === 0;
 }
 
@@ -62,9 +62,13 @@ async function runTmuxNewSession(name: string, path: string) {
 }
 
 async function runTmuxSwitchClient(name: string) {
-  await $`tmux switch-client -t ${name}`;
+  await $`tmux switch-client -t ${exactTmuxSessionTarget(name)}`;
 }
 
 async function runTmuxAttachSession(name: string) {
-  await $`tmux attach-session -t ${name} < ${Bun.stdin}`;
+  await $`tmux attach-session -t ${exactTmuxSessionTarget(name)} < ${Bun.stdin}`;
+}
+
+export function exactTmuxSessionTarget(name: string) {
+  return `=${name}`;
 }
