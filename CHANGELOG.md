@@ -1,5 +1,11 @@
 # tms
 
+## 0.4.0
+
+### Minor Changes
+
+- Add a `tms list` command that prints configured repositories and their worktree directories.
+
 ## 0.3.3
 
 ### Patch Changes
