@@ -26,6 +26,9 @@ async function main() {
       case "config":
         configure(args);
         break;
+      case "list":
+        await listRepos();
+        break;
       case "help":
       case "--help":
       case "-h":
@@ -138,6 +141,21 @@ async function loadRows() {
   return rows;
 }
 
+async function listRepos() {
+  const config = loadConfig(true);
+  const [{ discoverRepos }, { formatRepoList }] = await Promise.all([
+    import("./git"),
+    import("./list"),
+  ]);
+  const groups = await discoverRepos(config);
+
+  if (groups.length === 0) {
+    throw new Error("No Git repositories found in configured paths.");
+  }
+
+  console.log(formatRepoList(groups));
+}
+
 async function loadSessionRows() {
   const { listTmuxSessionRows } = await import("./tmux");
   return listTmuxSessionRows();
@@ -189,7 +207,7 @@ function printConfig(config: Config) {
 }
 
 function printHelp() {
-  console.log(`Usage: tms [--tab repos|sessions] [command]\n\nCommands:\n  config    Configure search paths and depth\n  help      Print this help\n\nRunning \`tms\` without a command opens the picker.`);
+  console.log(`Usage: tms [--tab repos|sessions] [command]\n\nCommands:\n  config    Configure search paths and depth\n  list      List repositories and worktree directories\n  help      Print this help\n\nRunning \`tms\` without a command opens the picker.`);
 }
 
 function printConfigHelp() {
