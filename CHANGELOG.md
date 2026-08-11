@@ -1,5 +1,11 @@
 # tms
 
+## 0.5.0
+
+### Minor Changes
+
+- [`d22e3bc`](https://github.com/princejoogie/tms/commit/d22e3bceed1b7c812edb8a0c461e04c8a09e84d0) Thanks [@princejoogie](https://github.com/princejoogie)! - Update dependencies to their latest releases and migrate the native renderer integration to the OpenTUI 0.5 ABI.
+
 ## 0.4.0
 
 ### Minor Changes
