@@ -1,4 +1,4 @@
-import { dlopen, ptr, type Pointer } from "bun:ffi";
+import { dlopen, ptr } from "bun:ffi";
 
 export type Color = Uint16Array;
 
@@ -8,7 +8,7 @@ const encoder = new TextEncoder();
 
 export async function createRenderer() {
   const lib = loadRenderLib(await nativeLibraryPath());
-  const renderer = lib.symbols.createRenderer(terminalWidth(), terminalHeight(), false, false);
+  const renderer = lib.symbols.createRenderer(terminalWidth(), terminalHeight(), 0, 0, null);
 
   if (!renderer) {
     throw new Error("Failed to create OpenTUI renderer.");
@@ -21,13 +21,13 @@ export async function createRenderer() {
 export class NativeRenderer {
   width = terminalWidth();
   height = terminalHeight();
-  private buffer: Pointer;
+  private buffer: number;
 
   constructor(
     private readonly lib: RenderLib,
-    private readonly renderer: Pointer,
+    private readonly renderer: number,
   ) {
-    this.buffer = requirePointer(this.lib.symbols.getNextBuffer(this.renderer), "Failed to get OpenTUI buffer.");
+    this.buffer = requireHandle(this.lib.symbols.getNextBuffer(this.renderer), "Failed to get OpenTUI buffer.");
   }
 
   clear(color: Color) {
@@ -53,7 +53,7 @@ export class NativeRenderer {
     this.width = terminalWidth();
     this.height = terminalHeight();
     this.lib.symbols.resizeRenderer(this.renderer, this.width, this.height);
-    this.buffer = requirePointer(this.lib.symbols.getNextBuffer(this.renderer), "Failed to get OpenTUI buffer.");
+    this.buffer = requireHandle(this.lib.symbols.getNextBuffer(this.renderer), "Failed to get OpenTUI buffer.");
   }
 
   destroy() {
@@ -95,19 +95,19 @@ async function nativeLibraryPath() {
 
 function loadRenderLib(path: string) {
   return dlopen(path, {
-    createRenderer: { args: ["u32", "u32", "bool", "bool"], returns: "ptr" },
-    destroyRenderer: { args: ["ptr"], returns: "void" },
-    setClearOnShutdown: { args: ["ptr", "bool"], returns: "void" },
-    getNextBuffer: { args: ["ptr"], returns: "ptr" },
-    resizeRenderer: { args: ["ptr", "u32", "u32"], returns: "void" },
-    bufferClear: { args: ["ptr", "ptr"], returns: "void" },
-    bufferDrawText: { args: ["ptr", "ptr", "u32", "u32", "u32", "ptr", "ptr", "u32"], returns: "void" },
-    bufferFillRect: { args: ["ptr", "u32", "u32", "u32", "u32", "ptr"], returns: "void" },
-    render: { args: ["ptr", "bool"], returns: "void" },
+    createRenderer: { args: ["u32", "u32", "u8", "u8", "ptr"], returns: "u32" },
+    destroyRenderer: { args: ["u32"], returns: "void" },
+    setClearOnShutdown: { args: ["u32", "bool"], returns: "void" },
+    getNextBuffer: { args: ["u32"], returns: "u32" },
+    resizeRenderer: { args: ["u32", "u32", "u32"], returns: "void" },
+    bufferClear: { args: ["u32", "ptr"], returns: "void" },
+    bufferDrawText: { args: ["u32", "ptr", "u32", "u32", "u32", "ptr", "ptr", "u32"], returns: "void" },
+    bufferFillRect: { args: ["u32", "u32", "u32", "u32", "u32", "ptr"], returns: "void" },
+    render: { args: ["u32", "bool"], returns: "u8" },
   });
 }
 
-function requirePointer(value: Pointer | null, message: string): Pointer {
+function requireHandle(value: number, message: string): number {
   if (!value) {
     throw new Error(message);
   }
